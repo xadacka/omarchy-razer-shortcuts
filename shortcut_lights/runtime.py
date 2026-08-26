@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from .core import active_targets, parse_binding_lines
+from .apps import application_targets
 from .layouts import MODIFIER_BITS, MODIFIER_EVENT_CODES, STANDARD_KEYBOARD
 
 
@@ -45,6 +46,7 @@ DEFAULT_CONFIG = {
         "ALT": "#e879f9"
     },
     "shiftAloneMode": "invert",
+    "applicationShortcuts": True,
     "includeModifierKeys": True,
     "refreshBindingsSec": 10,
     "deviceSerial": "auto",
@@ -87,6 +89,18 @@ def read_bindings() -> dict[int, set[str]]:
         check=True, capture_output=True, text=True, timeout=8,
     )
     return parse_binding_lines(result.stdout)
+
+
+def active_window_class() -> str:
+    try:
+        result = subprocess.run(
+            ["hyprctl", "activewindow", "-j"],
+            check=True, capture_output=True, text=True, timeout=1,
+        )
+        data = json.loads(result.stdout)
+        return str(data.get("class", ""))
+    except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
+        return ""
 
 
 def keyboard_paths() -> list[Path]:
@@ -226,6 +240,7 @@ def run(config_path: Path) -> int:
 
     bindings = read_bindings()
     refresh_sec = max(2, int(config["refreshBindingsSec"]))
+    app_shortcuts_enabled = bool(config.get("applicationShortcuts", True))
     last_refresh = time.monotonic()
     # Keep state per HID interface. Blade firmware revisions can route modifiers
     # through either interface, and some report them through both.
@@ -269,7 +284,10 @@ def run(config_path: Path) -> int:
                     continue
                 last_mask = held_mask
                 if held_mask:
-                    lighting.paint(active_targets(bindings, held_mask), held_names)
+                    targets = active_targets(bindings, held_mask)
+                    if app_shortcuts_enabled:
+                        targets |= application_targets(active_window_class(), held_mask)
+                    lighting.paint(targets, held_names)
                 else:
                     lighting.restore()
     finally:

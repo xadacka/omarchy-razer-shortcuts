@@ -18,6 +18,7 @@
     "ALT": "#e879f9"
   },
   "shiftAloneMode": "invert",
+  "applicationShortcuts": true,
   "includeModifierKeys": true,
   "refreshBindingsSec": 10,
   "deviceSerial": "auto"

@@ -14,6 +14,8 @@ and only the keys that complete shortcuts for that exact combination light up.
 - Shows exact layers: `Super+Shift` displays only `Super+Shift` shortcuts
 - Color-codes Super, Shift, Ctrl, Alt, and their combinations
 - Turns bare Shift into a full-keyboard inverse-color layer
+- Shows Chromium-family shortcuts when Chrome, Chromium, Brave, Edge, or
+  Vivaldi is focused
 - Restores the previous named OpenRazer effect and reported colors on release
 - Listens only for modifier transitions; it never grabs or records normal keys
 
@@ -100,6 +102,7 @@ This writes `~/.config/omarchy/razer-shortcuts.json`. See
 | `layerColors` | Built-in palette | Target color for each exact modifier set |
 | `modifierKeyColors` | Cyan/orange/amber/magenta | Individual modifier colors |
 | `shiftAloneMode` | `invert` | Bare Shift behavior |
+| `applicationShortcuts` | `true` | Add shortcuts for the focused supported app |
 | `includeModifierKeys` | `true` | Illuminate held modifier keys |
 | `refreshBindingsSec` | `10` | Binding refresh interval while idle |
 | `deviceSerial` | `auto` | Select a particular OpenRazer device |

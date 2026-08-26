@@ -5,6 +5,7 @@ import unittest
 from shortcut_lights.core import active_targets, parse_binding_lines
 from shortcut_lights.runtime import invert, layer_name
 from shortcut_lights.layouts import STANDARD_KEYBOARD
+from shortcut_lights.apps import application_targets
 
 
 class BindingParserTests(unittest.TestCase):
@@ -38,6 +39,13 @@ XF86AudioMute                       → Mute
     def test_standard_layout_covers_full_size_navigation_and_numpad(self):
         self.assertEqual(STANDARD_KEYBOARD["RIGHT"], (5, 17))
         self.assertEqual(STANDARD_KEYBOARD["KPENTER"], (4, 21))
+
+    def test_chromium_family_ctrl_layer(self):
+        targets = application_targets("brave-browser", 4)
+        self.assertTrue({"L", "T", "W", "R", "1", "TAB"} <= targets)
+
+    def test_unknown_application_has_no_extra_layer(self):
+        self.assertEqual(application_targets("org.gnome.Nautilus", 4), set())
 
 
 if __name__ == "__main__":
