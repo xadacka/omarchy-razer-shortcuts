@@ -17,6 +17,19 @@ Item {
     id: shortcutLights
     command: ["python3", root.pluginPath(Qt.resolvedUrl("daemon.py")), "run"]
     running: true
+    onExited: function(exitCode) {
+      if (exitCode !== 0 && !setupNotice.running)
+        setupNotice.running = true
+    }
+  }
+
+  Process {
+    id: setupNotice
+    command: [
+      "notify-send",
+      "Razer Shortcut Lights needs setup",
+      "Run ~/.config/omarchy/plugins/io.github.xadacka.razer-shortcuts/setup.sh"
+    ]
   }
 
   IpcHandler {

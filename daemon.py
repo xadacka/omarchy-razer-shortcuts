@@ -9,7 +9,6 @@ import os
 import sys
 from pathlib import Path
 
-from shortcut_lights.core import parse_binding_lines
 from shortcut_lights.runtime import DEFAULT_CONFIG, keyboard_paths, load_config, read_bindings, run
 
 
@@ -35,15 +34,39 @@ def main() -> int:
                 path.write_text(json.dumps(DEFAULT_CONFIG, indent=2) + "\n", encoding="utf-8")
             print(path)
             return 0
+        import openrazer.client
+
         config = load_config(config_path())
         bindings = read_bindings()
-        print(json.dumps({
+        paths = keyboard_paths()
+        readable = []
+        for path in paths:
+            try:
+                with path.open("rb", buffering=0):
+                    readable.append(str(path))
+            except OSError:
+                pass
+        manager = openrazer.client.DeviceManager()
+        devices = [
+            {
+                "name": str(device.name),
+                "serial": str(device.serial),
+                "matrix": f"{device.fx.advanced.rows}x{device.fx.advanced.cols}",
+            }
+            for device in manager.devices
+            if getattr(getattr(device, "fx", None), "advanced", None)
+        ]
+        report = {
+            "ok": bool(devices and readable and bindings),
             "config": config,
             "configPath": str(config_path()),
-            "inputDevices": [str(path) for path in keyboard_paths()],
+            "inputDevices": [str(path) for path in paths],
+            "readableInputDevices": readable,
+            "openRazerDevices": devices,
             "shortcutSets": {str(mask): len(keys) for mask, keys in bindings.items()},
-        }, indent=2))
-        return 0
+        }
+        print(json.dumps(report, indent=2))
+        return 0 if report["ok"] else 1
     except Exception as error:
         print(f"razer-shortcut-lights: {error}", file=sys.stderr)
         return 1

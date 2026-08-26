@@ -1,104 +1,160 @@
 # Razer Shortcut Lights for Omarchy
 
-An Omarchy service plugin that turns a supported OpenRazer keyboard into a
-live shortcut guide. Hold `Super`, `Alt`, `Ctrl`, `Shift`, or a combination and
-only keys that complete a currently mapped Omarchy/Hyprland shortcut light up.
+Turn your Razer keyboard into a live shortcut map for Omarchy. Hold a modifier
+and only the keys that complete shortcuts for that exact combination light up.
 
-Shortcut layers are color-coded by modifier: Super is cyan, Alt magenta, Ctrl
-amber, and combinations get distinct contrasting colors. Holding Shift by
-itself turns the whole physical key map into the inverse of `activeColor`, so
-Shift remains a useful visual layer even when it has no standalone shortcuts.
+![Omarchy](https://img.shields.io/badge/Omarchy-Quattro-111827)
+![OpenRazer](https://img.shields.io/badge/OpenRazer-3.x-00ff66)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
-The plugin reads the same list shown by `omarchy menu keybindings --print`, so
-it follows Omarchy updates and personal bindings automatically. Modifier sets
-match exactly: holding `Super+Shift` shows `Super+Shift` shortcuts, not the
-larger set of shortcuts bound to `Super` alone.
+## What it does
 
-## Requirements
+- Reads the shortcuts shown by `omarchy menu keybindings --print`
+- Refreshes automatically when Omarchy or personal bindings change
+- Shows exact layers: `Super+Shift` displays only `Super+Shift` shortcuts
+- Color-codes Super, Shift, Ctrl, Alt, and their combinations
+- Turns bare Shift into a full-keyboard inverse-color layer
+- Restores the previous named OpenRazer effect and reported colors on release
+- Listens only for modifier transitions; it never grabs or records normal keys
 
-- Omarchy 4 with shell plugin support
-- OpenRazer daemon and Python client (`openrazer-daemon`, `python-openrazer`)
-- A per-key OpenRazer keyboard
-- Permission to read the keyboard event device (OpenRazer's Arch package sets
-  the device group to `openrazer`)
+Default colors:
 
-The first hardware adapter is for the Razer Blade 16 (2025/2026), whose
-OpenRazer matrix is `6×17`.
+| Layer | Color |
+| --- | --- |
+| Super | Cyan |
+| Alt | Magenta |
+| Ctrl | Amber |
+| Super + Shift | Orange |
+| Other combinations | Contrasting pink, violet, green, red, and white |
+| Shift alone | Inverse of the active color across the physical key map |
+
+## Compatibility
+
+The initial hardware adapter supports the Razer Blade 16 (2025/2026) with
+OpenRazer's `6×17` per-key matrix. Other per-key Razer models need a matrix
+layout adapter; unsupported dimensions fail safely instead of lighting the
+wrong keys.
+
+Requirements:
+
+- Omarchy 4 / Quattro shell plugin support
+- OpenRazer daemon and Python client
+- A supported per-key Razer keyboard
 
 ## Install
 
-```bash
-omarchy plugin add https://github.com/YOUR_USER/omarchy-razer-shortcuts.git --enable
-```
-
-For local development:
+Add and enable the plugin:
 
 ```bash
-omarchy plugin validate .
-python3 -m unittest discover tests
-python3 daemon.py doctor
+omarchy plugin add https://github.com/xadacka/omarchy-razer-shortcuts.git --enable
 ```
 
-Then add the local Git checkout with `omarchy plugin add file:///absolute/path
---enable`, or copy it to
-`~/.config/omarchy/plugins/io.github.florian.razer-shortcuts` and run:
+Then run its interactive setup:
 
 ```bash
-omarchy plugin enable io.github.florian.razer-shortcuts
+~/.config/omarchy/plugins/io.github.xadacka.razer-shortcuts/setup.sh
 ```
 
-## Configuration
+Setup checks OpenRazer first. If it is missing, it explains the kernel-driver
+and daemon changes and offers to install `openrazer-daemon` and
+`python-openrazer` through `omarchy pkg add`. It also offers to add the current
+user to the `openrazer` group when needed. Nothing is installed silently.
 
-The defaults require no config. To create an editable user config:
+For a fully confirmed setup on a machine you administer:
 
 ```bash
-python3 daemon.py init-config
+~/.config/omarchy/plugins/io.github.xadacka.razer-shortcuts/setup.sh --yes
 ```
 
-This writes `~/.config/omarchy/razer-shortcuts.json`. Restart just this service
-after editing it:
+The Omarchy plugin command itself intentionally never executes install hooks or
+uses sudo. Keeping dependency setup explicit follows the official plugin safety
+model.
+
+## Configure colors
+
+Defaults require no config. Create an editable config with:
 
 ```bash
-omarchy-shell ipc call razer-shortcuts reload
+python3 ~/.config/omarchy/plugins/io.github.xadacka.razer-shortcuts/daemon.py init-config
 ```
 
-Available settings:
+This writes `~/.config/omarchy/razer-shortcuts.json`. See
+[`config.example.json`](config.example.json) for the full palette.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| `activeColor` | `#38bdf8` | Available shortcut target keys |
-| `modifierColor` | `#ffffff` | Held modifier keys |
-| `layerColors` | modifier palette | Target color for each exact modifier set |
-| `modifierKeyColors` | cyan/orange/amber/magenta | Individual held-modifier colors |
-| `shiftAloneMode` | `invert` | Invert `activeColor` across all keys for bare Shift |
-| `includeModifierKeys` | `true` | Also illuminate held modifiers |
-| `refreshBindingsSec` | `10` | Refresh bindings while idle |
-| `deviceSerial` | `auto` | Select a specific OpenRazer serial |
+| `activeColor` | `#38bdf8` | Base shortcut color and Shift inversion source |
+| `modifierColor` | `#ffffff` | Fallback held-modifier color |
+| `layerColors` | Built-in palette | Target color for each exact modifier set |
+| `modifierKeyColors` | Cyan/orange/amber/magenta | Individual modifier colors |
+| `shiftAloneMode` | `invert` | Bare Shift behavior |
+| `includeModifierKeys` | `true` | Illuminate held modifier keys |
+| `refreshBindingsSec` | `10` | Binding refresh interval while idle |
+| `deviceSerial` | `auto` | Select a particular OpenRazer device |
 
-## How it works
-
-The service opens the Razer keyboard event stream read-only. It listens only
-for modifier key press/release events; it does not grab the device, inject
-input, or record ordinary keystrokes. On a modifier change it performs one
-OpenRazer matrix draw. On release it restores the prior named lighting effect.
-
-OpenRazer cannot read back a keyboard's current advanced per-key framebuffer.
-Named effects and their reported colors are restored; a custom advanced matrix
-cannot be reconstructed after an overlay.
-
-## Troubleshooting
+After changing config, disable and re-enable the plugin:
 
 ```bash
-python3 daemon.py doctor
+omarchy plugin disable io.github.xadacka.razer-shortcuts
+omarchy plugin enable io.github.xadacka.razer-shortcuts
+```
+
+## Diagnostics
+
+```bash
+python3 ~/.config/omarchy/plugins/io.github.xadacka.razer-shortcuts/daemon.py doctor
 journalctl --user -u openrazer-daemon
 ```
 
-If `doctor` reports that the event device is not readable, ensure the user is
-in the `openrazer` group and log out/in. The plugin never runs as root.
+The doctor verifies bindings, input permissions, the OpenRazer D-Bus service,
+the detected keyboard, and matrix dimensions. If setup added group membership,
+log out and back in before rerunning it.
 
-## Security
+## How it works and privacy
 
-Omarchy shell plugins execute as the logged-in user. Review plugins before
-enabling them. This plugin launches one local Python process, opens only
-Razer-labelled keyboard event nodes, and connects to the existing OpenRazer
-user daemon over D-Bus.
+The headless Omarchy service starts one local Python process. It opens only
+keyboard event nodes carrying a Razer USB identity and reacts only to Linux
+modifier codes. It does not grab the device, inspect ordinary key events,
+inject input, use the network, or run as root.
+
+On modifier changes it sends one advanced-matrix draw through the existing
+OpenRazer user daemon. OpenRazer cannot read back a custom advanced per-key
+framebuffer, so named effects and their reported colors can be restored, while
+an arbitrary advanced matrix cannot be reconstructed.
+
+Like every Omarchy shell plugin, this code executes unsandboxed as your logged-in
+user. Review third-party plugins before enabling them.
+
+## Update and remove
+
+```bash
+omarchy plugin update io.github.xadacka.razer-shortcuts
+omarchy plugin remove io.github.xadacka.razer-shortcuts
+```
+
+Removal stops and removes the plugin. It deliberately leaves OpenRazer installed
+because other applications may use it. If you installed OpenRazer solely for
+this plugin, review dependants and remove it separately:
+
+```bash
+omarchy pkg drop python-openrazer openrazer-daemon
+```
+
+Your optional color config remains at
+`~/.config/omarchy/razer-shortcuts.json` until you remove it.
+
+## Development
+
+```bash
+omarchy plugin validate .
+python3 -m unittest discover tests -v
+python3 daemon.py doctor
+```
+
+The repository root is the installable plugin—there is no generated bundle and
+no install hook. Contributions for tested keyboard matrix adapters are welcome.
+
+## License
+
+[MIT](LICENSE). This is an unofficial community plugin and is not affiliated
+with Razer, OpenRazer, or Omarchy.
