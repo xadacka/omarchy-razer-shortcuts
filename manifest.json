@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.florian.razer-shortcuts",
+  "name": "Razer Shortcut Lights",
+  "version": "0.1.0",
+  "author": "Florian",
+  "license": "MIT",
+  "description": "Lights only the keys that complete an active Omarchy shortcut while modifier keys are held.",
+  "kinds": [
+    "service"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Service.qml"
+  }
+}
