@@ -1,6 +1,23 @@
 {
   "activeColor": "#38bdf8",
   "modifierColor": "#ffffff",
+  "layerColors": {
+    "SUPER": "#38bdf8",
+    "ALT": "#e879f9",
+    "CTRL": "#fbbf24",
+    "SUPER+SHIFT": "#f97316",
+    "SUPER+ALT": "#f472b6",
+    "SUPER+CTRL": "#a78bfa",
+    "SHIFT+ALT": "#fb7185",
+    "CTRL+ALT": "#34d399"
+  },
+  "modifierKeyColors": {
+    "SUPER": "#38bdf8",
+    "SHIFT": "#f97316",
+    "CTRL": "#fbbf24",
+    "ALT": "#e879f9"
+  },
+  "shiftAloneMode": "invert",
   "includeModifierKeys": true,
   "refreshBindingsSec": 10,
   "deviceSerial": "auto"

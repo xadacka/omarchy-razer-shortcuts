@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 from shortcut_lights.core import active_targets, parse_binding_lines
+from shortcut_lights.runtime import invert, layer_name
 
 
 class BindingParserTests(unittest.TestCase):
@@ -26,6 +27,12 @@ XF86AudioMute                       → Mute
     def test_exact_modifiers_only(self):
         bindings = {64: {"K"}, 65: {"F"}}
         self.assertEqual(active_targets(bindings, 65), {"F"})
+
+    def test_layer_name_has_stable_order(self):
+        self.assertEqual(layer_name({"ALT", "SUPER", "SHIFT"}), "SUPER+SHIFT+ALT")
+
+    def test_color_inversion(self):
+        self.assertEqual(invert((56, 189, 248)), (199, 66, 7))
 
 
 if __name__ == "__main__":

@@ -4,6 +4,11 @@ An Omarchy service plugin that turns a supported OpenRazer keyboard into a
 live shortcut guide. Hold `Super`, `Alt`, `Ctrl`, `Shift`, or a combination and
 only keys that complete a currently mapped Omarchy/Hyprland shortcut light up.
 
+Shortcut layers are color-coded by modifier: Super is cyan, Alt magenta, Ctrl
+amber, and combinations get distinct contrasting colors. Holding Shift by
+itself turns the whole physical key map into the inverse of `activeColor`, so
+Shift remains a useful visual layer even when it has no standalone shortcuts.
+
 The plugin reads the same list shown by `omarchy menu keybindings --print`, so
 it follows Omarchy updates and personal bindings automatically. Modifier sets
 match exactly: holding `Super+Shift` shows `Super+Shift` shortcuts, not the
@@ -63,6 +68,9 @@ Available settings:
 | --- | --- | --- |
 | `activeColor` | `#38bdf8` | Available shortcut target keys |
 | `modifierColor` | `#ffffff` | Held modifier keys |
+| `layerColors` | modifier palette | Target color for each exact modifier set |
+| `modifierKeyColors` | cyan/orange/amber/magenta | Individual held-modifier colors |
+| `shiftAloneMode` | `invert` | Invert `activeColor` across all keys for bare Shift |
 | `includeModifierKeys` | `true` | Also illuminate held modifiers |
 | `refreshBindingsSec` | `10` | Refresh bindings while idle |
 | `deviceSerial` | `auto` | Select a specific OpenRazer serial |

@@ -23,6 +23,28 @@ EV_KEY = 1
 DEFAULT_CONFIG = {
     "activeColor": "#38bdf8",
     "modifierColor": "#ffffff",
+    "layerColors": {
+        "SUPER": "#38bdf8",
+        "ALT": "#e879f9",
+        "CTRL": "#fbbf24",
+        "SUPER+SHIFT": "#f97316",
+        "SUPER+ALT": "#f472b6",
+        "SUPER+CTRL": "#a78bfa",
+        "SHIFT+ALT": "#fb7185",
+        "CTRL+ALT": "#34d399",
+        "SUPER+SHIFT+ALT": "#ef4444",
+        "SUPER+SHIFT+CTRL": "#84cc16",
+        "SUPER+CTRL+ALT": "#22d3ee",
+        "SHIFT+CTRL+ALT": "#facc15",
+        "SUPER+SHIFT+CTRL+ALT": "#ffffff"
+    },
+    "modifierKeyColors": {
+        "SUPER": "#38bdf8",
+        "SHIFT": "#f97316",
+        "CTRL": "#fbbf24",
+        "ALT": "#e879f9"
+    },
+    "shiftAloneMode": "invert",
     "includeModifierKeys": True,
     "refreshBindingsSec": 10,
     "deviceSerial": "auto",
@@ -48,6 +70,15 @@ def rgb(value: str) -> tuple[int, int, int]:
     if len(value) != 6:
         raise ValueError(f"expected #RRGGBB color, got {value!r}")
     return tuple(int(value[index:index + 2], 16) for index in (0, 2, 4))
+
+
+def invert(color: tuple[int, int, int]) -> tuple[int, int, int]:
+    return tuple(255 - channel for channel in color)
+
+
+def layer_name(held_names: set[str]) -> str:
+    order = ("SUPER", "SHIFT", "CTRL", "ALT")
+    return "+".join(name for name in order if name in held_names)
 
 
 def read_bindings() -> dict[int, set[str]]:
@@ -90,6 +121,15 @@ class Lighting:
             raise RuntimeError(f"unsupported matrix {self.rows}x{self.cols}; add a layout adapter")
         self.active_rgb = rgb(str(config["activeColor"]))
         self.modifier_rgb = rgb(str(config["modifierColor"]))
+        self.layer_colors = {
+            str(name): rgb(str(color))
+            for name, color in dict(config.get("layerColors", {})).items()
+        }
+        self.modifier_colors = {
+            str(name): rgb(str(color))
+            for name, color in dict(config.get("modifierKeyColors", {})).items()
+        }
+        self.shift_alone_mode = str(config.get("shiftAloneMode", "invert"))
         self.include_modifiers = bool(config["includeModifierKeys"])
         self.restore_effect = str(getattr(device.fx, "effect", "spectrum") or "spectrum")
         raw_colors = bytes(getattr(device.fx, "colors", b"") or b"")
@@ -101,9 +141,13 @@ class Lighting:
         for row in range(self.rows):
             for col in range(self.cols):
                 self.matrix[row, col] = (0, 0, 0)
+        target_rgb = self.layer_colors.get(layer_name(held_names), self.active_rgb)
+        if held_names == {"SHIFT"} and self.shift_alone_mode == "invert":
+            targets = set(BLADE_16_6X17)
+            target_rgb = invert(self.active_rgb)
         for target in targets:
             if target in BLADE_16_6X17:
-                self.matrix[BLADE_16_6X17[target]] = self.active_rgb
+                self.matrix[BLADE_16_6X17[target]] = target_rgb
         if self.include_modifiers:
             modifier_keys = {
                 "SUPER": "LEFTMETA", "ALT": "LEFTALT",
@@ -112,7 +156,7 @@ class Lighting:
             for name in held_names:
                 target = modifier_keys[name]
                 if target in BLADE_16_6X17:
-                    self.matrix[BLADE_16_6X17[target]] = self.modifier_rgb
+                    self.matrix[BLADE_16_6X17[target]] = self.modifier_colors.get(name, self.modifier_rgb)
         self.device.fx.advanced.draw()
 
     def restore(self) -> None:
