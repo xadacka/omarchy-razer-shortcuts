@@ -160,10 +160,7 @@ def run(config_path: Path) -> int:
     config = load_config(config_path)
     manager = openrazer.client.DeviceManager()
     lighting = Lighting(select_device(manager, str(config["deviceSerial"])), config)
-    # The first non-interface by-id path is the normal typing interface. Razer
-    # laptops expose a second consumer-control interface; listening to both can
-    # duplicate press/release transitions on some firmware.
-    paths = keyboard_paths()[:1]
+    paths = keyboard_paths()
     if not paths:
         raise RuntimeError("no Razer keyboard input event device found")
 
@@ -182,7 +179,9 @@ def run(config_path: Path) -> int:
     bindings = read_bindings()
     refresh_sec = max(2, int(config["refreshBindingsSec"]))
     last_refresh = time.monotonic()
-    held_codes: set[int] = set()
+    # Keep state per HID interface. Blade firmware revisions can route modifiers
+    # through either interface, and some report them through both.
+    held_by_handle: dict[Any, set[int]] = {handle: set() for handle in handles}
     last_mask = 0
     stopping = False
 
@@ -197,7 +196,7 @@ def run(config_path: Path) -> int:
     try:
         while not stopping:
             now = time.monotonic()
-            if not held_codes and now - last_refresh >= refresh_sec:
+            if not any(held_by_handle.values()) and now - last_refresh >= refresh_sec:
                 try:
                     bindings = read_bindings()
                     last_refresh = now
@@ -210,10 +209,12 @@ def run(config_path: Path) -> int:
                 _sec, _usec, event_type, code, value = EVENT.unpack(data)
                 if event_type != EV_KEY or code not in MODIFIER_EVENT_CODES or value == 2:
                     continue
+                source_held = held_by_handle[key.fileobj]
                 if value == 1:
-                    held_codes.add(code)
+                    source_held.add(code)
                 elif value == 0:
-                    held_codes.discard(code)
+                    source_held.discard(code)
+                held_codes = set().union(*held_by_handle.values())
                 held_names = {MODIFIER_EVENT_CODES[item] for item in held_codes}
                 held_mask = sum(MODIFIER_BITS[name] for name in held_names)
                 if held_mask == last_mask:
