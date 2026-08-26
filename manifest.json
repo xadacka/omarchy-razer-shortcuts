@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.xadacka.razer-shortcuts",
   "name": "Razer Shortcut Lights",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Florian Stravock",
   "license": "MIT",
   "description": "Lights only the keys that complete an active Omarchy shortcut while modifier keys are held.",

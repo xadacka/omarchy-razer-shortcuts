@@ -30,10 +30,19 @@ Default colors:
 
 ## Compatibility
 
-The initial hardware adapter supports the Razer Blade 16 (2025/2026) with
-OpenRazer's `6×17` per-key matrix. Other per-key Razer models need a matrix
-layout adapter; unsupported dimensions fail safely instead of lighting the
-wrong keys.
+The plugin supports OpenRazer keyboards that use its standard sparse keyboard
+matrix, from compact laptop layouts through full-size boards with numpads. It
+clips the canonical `6×22` key coordinates to each device's reported matrix.
+Nonstandard keypads such as Tartarus and Orbweaver need their own adapter and
+currently fail safely instead of lighting the wrong controls.
+
+The Razer Blade 16 (2026), USB ID `1532:02e0`, is supported by
+[OpenRazer PR #2894](https://github.com/openrazer/openrazer/pull/2894) but is not
+in OpenRazer 3.12.4. On that laptop, setup offers to build proper Arch `-git`
+packages from the exact tested commit in
+[`xadacka/openrazer`](https://github.com/xadacka/openrazer/tree/blade-16-2026-support).
+The source commit is pinned rather than following a moving branch. Once support
+lands in an OpenRazer release, this temporary path can be removed.
 
 Requirements:
 
@@ -58,7 +67,10 @@ Then run its interactive setup:
 Setup checks OpenRazer first. If it is missing, it explains the kernel-driver
 and daemon changes and offers to install `openrazer-daemon` and
 `python-openrazer` through `omarchy pkg add`. It also offers to add the current
-user to the `openrazer` group when needed. Nothing is installed silently.
+user to the permission group when needed. On a Blade 16 (2026), it detects USB
+ID `1532:02e0` and offers the pinned PR build described above. The build uses a
+pinned AUR packaging revision and produces packages tracked by pacman; it does
+not overwrite package-owned files by hand. Nothing is installed silently.
 
 For a fully confirmed setup on a machine you administer:
 
@@ -152,7 +164,8 @@ python3 daemon.py doctor
 ```
 
 The repository root is the installable plugin—there is no generated bundle and
-no install hook. Contributions for tested keyboard matrix adapters are welcome.
+no install hook. Contributions for tested nonstandard keyboard/keypad matrix
+adapters are welcome.
 
 ## License
 

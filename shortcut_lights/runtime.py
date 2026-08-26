@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from .core import active_targets, parse_binding_lines
-from .layouts import BLADE_16_6X17, MODIFIER_BITS, MODIFIER_EVENT_CODES
+from .layouts import MODIFIER_BITS, MODIFIER_EVENT_CODES, STANDARD_KEYBOARD
 
 
 EVENT = struct.Struct("llHHI")
@@ -117,8 +117,10 @@ class Lighting:
         self.matrix = device.fx.advanced.matrix
         self.rows = int(device.fx.advanced.rows)
         self.cols = int(device.fx.advanced.cols)
-        if (self.rows, self.cols) != (6, 17):
-            raise RuntimeError(f"unsupported matrix {self.rows}x{self.cols}; add a layout adapter")
+        if self.rows < 5 or self.cols < 14:
+            raise RuntimeError(
+                f"matrix {self.rows}x{self.cols} does not use OpenRazer's standard keyboard layout"
+            )
         self.active_rgb = rgb(str(config["activeColor"]))
         self.modifier_rgb = rgb(str(config["modifierColor"]))
         self.layer_colors = {
@@ -143,11 +145,12 @@ class Lighting:
                 self.matrix[row, col] = (0, 0, 0)
         target_rgb = self.layer_colors.get(layer_name(held_names), self.active_rgb)
         if held_names == {"SHIFT"} and self.shift_alone_mode == "invert":
-            targets = set(BLADE_16_6X17)
+            targets = set(STANDARD_KEYBOARD)
             target_rgb = invert(self.active_rgb)
         for target in targets:
-            if target in BLADE_16_6X17:
-                self.matrix[BLADE_16_6X17[target]] = target_rgb
+            coordinate = STANDARD_KEYBOARD.get(target)
+            if coordinate and coordinate[0] < self.rows and coordinate[1] < self.cols:
+                self.matrix[coordinate] = target_rgb
         if self.include_modifiers:
             modifier_keys = {
                 "SUPER": "LEFTMETA", "ALT": "LEFTALT",
@@ -155,8 +158,9 @@ class Lighting:
             }
             for name in held_names:
                 target = modifier_keys[name]
-                if target in BLADE_16_6X17:
-                    self.matrix[BLADE_16_6X17[target]] = self.modifier_colors.get(name, self.modifier_rgb)
+                coordinate = STANDARD_KEYBOARD.get(target)
+                if coordinate and coordinate[0] < self.rows and coordinate[1] < self.cols:
+                    self.matrix[coordinate] = self.modifier_colors.get(name, self.modifier_rgb)
         self.device.fx.advanced.draw()
 
     def restore(self) -> None:

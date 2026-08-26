@@ -3,6 +3,8 @@
 set -euo pipefail
 
 ASSUME_YES=0
+OPENRAZER_COMMIT="1045a95323314b1403be4cd5849ac51fcac638ea"
+AUR_COMMIT="09ec9629657898567183b51f5b57103dcdda19f9"
 if [[ ${1:-} == "--yes" || ${1:-} == "-y" ]]; then
   ASSUME_YES=1
 elif [[ $# -gt 0 ]]; then
@@ -19,6 +21,57 @@ confirm() {
     read -r -p "$prompt [y/N] " answer
     [[ $answer == [yY] || $answer == [yY][eE][sS] ]]
   fi
+}
+
+has_blade_16_2026() {
+  for product_file in /sys/bus/usb/devices/*/idProduct; do
+    [[ -r $product_file ]] || continue
+    product=$(<"$product_file")
+    vendor_file="${product_file%/idProduct}/idVendor"
+    [[ -r $vendor_file ]] || continue
+    vendor=$(<"$vendor_file")
+    [[ ${vendor,,} == 1532 && ${product,,} == 02e0 ]] && return 0
+  done
+  return 1
+}
+
+install_patched_openrazer() {
+  echo
+  echo "The Razer Blade 16 (2026), USB 1532:02e0, is awaiting upstream support."
+  echo "This builds tracked Arch -git packages from Florian's open OpenRazer PR:"
+  echo "  https://github.com/openrazer/openrazer/pull/2894"
+  echo "Pinned OpenRazer commit: $OPENRAZER_COMMIT"
+  confirm "Build and install the pinned Blade 16 (2026) OpenRazer packages?" || return 1
+
+  if [[ ! -e /usr/lib/modules/$(uname -r)/build ]]; then
+    echo "Kernel headers for $(uname -r) are missing." >&2
+    echo "Install the matching headers package, reboot if needed, and rerun setup." >&2
+    return 1
+  fi
+
+  omarchy pkg add base-devel git
+  build_root=$(mktemp -d)
+  trap 'rm -rf -- "$build_root"' RETURN
+  git clone https://aur.archlinux.org/openrazer-git.git "$build_root/openrazer-git"
+  git -C "$build_root/openrazer-git" checkout --detach "$AUR_COMMIT"
+  sed -i \
+    "s|git+https://github.com/openrazer/openrazer.git|git+https://github.com/xadacka/openrazer.git#commit=$OPENRAZER_COMMIT|" \
+    "$build_root/openrazer-git/PKGBUILD"
+  (
+    cd "$build_root/openrazer-git"
+    PATH=/usr/bin:/bin makepkg -sC --noconfirm
+  )
+  shopt -s nullglob
+  packages=("$build_root/openrazer-git"/*.pkg.tar.zst)
+  shopt -u nullglob
+  (( ${#packages[@]} )) || { echo "OpenRazer package build produced no packages." >&2; return 1; }
+  if (( ASSUME_YES )); then
+    sudo pacman -U --needed --noconfirm "${packages[@]}"
+  else
+    sudo pacman -U --needed "${packages[@]}"
+  fi
+  echo "✓ Installed OpenRazer from pinned Blade-support commit"
+  echo "Reboot after setup so razerkbd binds to the laptop at boot."
 }
 
 echo "Razer Shortcut Lights setup"
@@ -42,11 +95,17 @@ else
   echo "✓ OpenRazer packages are installed"
 fi
 
-if ! id -nG "$USER" | tr ' ' '\n' | grep -qx openrazer; then
+if has_blade_16_2026 && ! pacman -Q openrazer-driver-dkms-git >/dev/null 2>&1; then
+  install_patched_openrazer
+fi
+
+permission_group="openrazer"
+getent group "$permission_group" >/dev/null || permission_group="plugdev"
+if ! id -nG "$USER" | tr ' ' '\n' | grep -qx "$permission_group"; then
   echo
-  echo "Your user is not listed in the openrazer group."
-  if confirm "Add '$USER' to the openrazer group? (sudo; requires logout/login)"; then
-    sudo gpasswd -a "$USER" openrazer
+  echo "Your user is not listed in the $permission_group group."
+  if confirm "Add '$USER' to the $permission_group group? (sudo; requires logout/login)"; then
+    sudo gpasswd -a "$USER" "$permission_group"
     echo "Log out and back in after setup so the new group membership applies."
   else
     echo "Skipped group membership; keyboard event permissions may prevent the plugin from working."

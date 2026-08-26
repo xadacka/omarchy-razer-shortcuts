@@ -1,42 +1,44 @@
-"""OpenRazer LED-matrix layouts.
-
-OpenRazer uses a sparse rectangular matrix. These coordinates follow its
-standard KEY_MAPPING, clipped to the Blade 16's reported 6x17 matrix.
-"""
+"""OpenRazer's standard sparse keyboard LED-matrix layout."""
 
 from __future__ import annotations
 
 
-BLADE_16_6X17: dict[str, tuple[int, int]] = {
+STANDARD_KEYBOARD: dict[str, tuple[int, int]] = {
     "ESCAPE": (0, 1),
     "F1": (0, 3), "F2": (0, 4), "F3": (0, 5), "F4": (0, 6),
     "F5": (0, 7), "F6": (0, 8), "F7": (0, 9), "F8": (0, 10),
     "F9": (0, 11), "F10": (0, 12), "F11": (0, 13), "F12": (0, 14),
-    "PRINT": (0, 15), "SCROLLLOCK": (0, 16),
+    "PRINT": (0, 15), "SCROLLLOCK": (0, 16), "PAUSE": (0, 17),
     "GRAVE": (1, 1), "1": (1, 2), "2": (1, 3), "3": (1, 4),
     "4": (1, 5), "5": (1, 6), "6": (1, 7), "7": (1, 8),
     "8": (1, 9), "9": (1, 10), "0": (1, 11), "MINUS": (1, 12),
     "EQUAL": (1, 13), "BACKSPACE": (1, 14), "INSERT": (1, 15), "HOME": (1, 16),
+    "PAGEUP": (1, 17), "NUMLOCK": (1, 18), "KPSLASH": (1, 19),
+    "KPASTERISK": (1, 20), "KPMINUS": (1, 21),
     "TAB": (2, 1), "Q": (2, 2), "W": (2, 3), "E": (2, 4),
     "R": (2, 5), "T": (2, 6), "Y": (2, 7), "U": (2, 8),
     "I": (2, 9), "O": (2, 10), "P": (2, 11), "BRACKETLEFT": (2, 12),
     "BRACKETRIGHT": (2, 13), "DELETE": (2, 15), "END": (2, 16),
+    "PAGEDOWN": (2, 17), "KP7": (2, 18), "KP8": (2, 19),
+    "KP9": (2, 20), "KPPLUS": (2, 21),
     "CAPSLOCK": (3, 1), "A": (3, 2), "S": (3, 3), "D": (3, 4),
     "F": (3, 5), "G": (3, 6), "H": (3, 7), "J": (3, 8),
     "K": (3, 9), "L": (3, 10), "SEMICOLON": (3, 11), "APOSTROPHE": (3, 12),
-    "BACKSLASH": (3, 13), "RETURN": (3, 14),
+    "BACKSLASH": (3, 13), "RETURN": (3, 14), "KP4": (3, 18),
+    "KP5": (3, 19), "KP6": (3, 20),
     "LEFTSHIFT": (4, 1), "Z": (4, 3), "X": (4, 4), "C": (4, 5),
     "V": (4, 6), "B": (4, 7), "N": (4, 8), "M": (4, 9),
     "COMMA": (4, 10), "PERIOD": (4, 11), "SLASH": (4, 12),
-    "RIGHTSHIFT": (4, 14), "UP": (4, 16),
+    "RIGHTSHIFT": (4, 14), "UP": (4, 16), "KP1": (4, 18),
+    "KP2": (4, 19), "KP3": (4, 20), "KPENTER": (4, 21),
     "LEFTCTRL": (5, 1), "LEFTMETA": (5, 2), "LEFTALT": (5, 3),
     "SPACE": (5, 7), "RIGHTALT": (5, 11), "FN": (5, 12),
     "MENU": (5, 13), "RIGHTCTRL": (5, 14), "LEFT": (5, 15),
-    "DOWN": (5, 16),
+    "DOWN": (5, 16), "RIGHT": (5, 17), "KP0": (5, 19), "KPDOT": (5, 20),
 }
 
 ALIASES = {
-    "ESC": "ESCAPE", "ENTER": "RETURN", "KP_ENTER": "RETURN",
+    "ESC": "ESCAPE", "ENTER": "RETURN", "KP_ENTER": "KPENTER",
     "`": "GRAVE", "~": "GRAVE", "-": "MINUS", "=": "EQUAL",
     "[": "BRACKETLEFT", "]": "BRACKETRIGHT", "\\": "BACKSLASH",
     ";": "SEMICOLON", "'": "APOSTROPHE", ",": "COMMA", ".": "PERIOD", "/": "SLASH",

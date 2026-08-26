@@ -4,6 +4,7 @@ import unittest
 
 from shortcut_lights.core import active_targets, parse_binding_lines
 from shortcut_lights.runtime import invert, layer_name
+from shortcut_lights.layouts import STANDARD_KEYBOARD
 
 
 class BindingParserTests(unittest.TestCase):
@@ -33,6 +34,10 @@ XF86AudioMute                       → Mute
 
     def test_color_inversion(self):
         self.assertEqual(invert((56, 189, 248)), (199, 66, 7))
+
+    def test_standard_layout_covers_full_size_navigation_and_numpad(self):
+        self.assertEqual(STANDARD_KEYBOARD["RIGHT"], (5, 17))
+        self.assertEqual(STANDARD_KEYBOARD["KPENTER"], (4, 21))
 
 
 if __name__ == "__main__":
