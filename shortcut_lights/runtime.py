@@ -147,11 +147,21 @@ class Lighting:
         }
         self.shift_alone_mode = str(config.get("shiftAloneMode", "invert"))
         self.include_modifiers = bool(config["includeModifierKeys"])
-        self.restore_effect = str(getattr(device.fx, "effect", "spectrum") or "spectrum")
-        raw_colors = bytes(getattr(device.fx, "colors", b"") or b"")
-        self.restore_colors = [tuple(raw_colors[index:index + 3]) for index in range(0, len(raw_colors), 3)]
-        self.restore_colors = [color for color in self.restore_colors if len(color) == 3]
-        self.restore_brightness = getattr(device, "brightness", None)
+        self.snapshot()
+
+    def snapshot(self) -> None:
+        # Captures whatever is currently lit so restore() can put it back.
+        # Must be called fresh before each paint(), not just once at
+        # startup: this process stays running for the whole session (see
+        # Service.qml, kept loaded), so a one-time snapshot at __init__
+        # would go stale the moment anything else (a theme change, the
+        # OpenRazer panel, etc.) re-lights the keyboard afterward.
+        fx = self.device.fx
+        self.restore_effect = str(getattr(fx, "effect", "spectrum") or "spectrum")
+        raw_colors = bytes(getattr(fx, "colors", b"") or b"")
+        colors = [tuple(raw_colors[index:index + 3]) for index in range(0, len(raw_colors), 3)]
+        self.restore_colors = [color for color in colors if len(color) == 3]
+        self.restore_brightness = getattr(self.device, "brightness", None)
 
     def paint(self, targets: set[str], held_names: set[str]) -> None:
         for row in range(self.rows):
@@ -282,8 +292,11 @@ def run(config_path: Path) -> int:
                 held_mask = sum(MODIFIER_BITS[name] for name in held_names)
                 if held_mask == last_mask:
                     continue
+                entering_hold = last_mask == 0 and held_mask != 0
                 last_mask = held_mask
                 if held_mask:
+                    if entering_hold:
+                        lighting.snapshot()
                     targets = active_targets(bindings, held_mask)
                     if app_shortcuts_enabled:
                         targets |= application_targets(active_window_class(), held_mask)

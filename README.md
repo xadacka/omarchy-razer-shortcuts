@@ -16,7 +16,9 @@ and only the keys that complete shortcuts for that exact combination light up.
 - Turns bare Shift into a full-keyboard inverse-color layer
 - Shows Chromium-family shortcuts when Chrome, Chromium, Brave, Edge, or
   Vivaldi is focused
-- Restores the previous named OpenRazer effect and reported colors on release
+- Re-checks the keyboard right before each press and restores exactly that on
+  release, so a theme switch or another app's lighting change between presses
+  is never clobbered
 - Listens only for modifier transitions; it never grabs or records normal keys
 
 Default colors:
@@ -135,7 +137,12 @@ inject input, use the network, or run as root.
 On modifier changes it sends one advanced-matrix draw through the existing
 OpenRazer user daemon. OpenRazer cannot read back a custom advanced per-key
 framebuffer, so named effects and their reported colors can be restored, while
-an arbitrary advanced matrix cannot be reconstructed.
+an arbitrary advanced matrix cannot be reconstructed. The service is
+long-running, so it re-reads the keyboard's current effect and colors at the
+start of every press rather than once at launch — otherwise a theme change or
+other lighting update made while the service was already running would be
+invisible to it, and release would keep restoring however the keyboard looked
+when the service first started.
 
 Like every Omarchy shell plugin, this code executes unsandboxed as your logged-in
 user. Review third-party plugins before enabling them.
