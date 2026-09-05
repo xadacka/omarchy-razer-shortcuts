@@ -118,6 +118,17 @@ systemctl --user enable --now openrazer-daemon.service
 echo "✓ OpenRazer daemon enabled and started"
 
 plugin_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+
+theme_hook_name="theme-set-reload-razer-shortcuts.sh"
+theme_hook_dest="$HOME/.config/omarchy/hooks/theme-set.d/$theme_hook_name"
+if [[ -f $theme_hook_dest ]]; then
+  echo "✓ Instant theme-change reload hook already installed"
+elif confirm "Install a theme-set hook so switching themes reloads keyboard colors instantly (instead of within themeRefreshSec)?"; then
+  omarchy hook install theme-set "$plugin_dir/hooks/$theme_hook_name"
+else
+  echo "Skipped; the daemon still picks up theme changes on its own within themeRefreshSec."
+fi
+
 if python3 "$plugin_dir/daemon.py" doctor; then
   echo
   echo "✓ Razer Shortcut Lights is ready"
