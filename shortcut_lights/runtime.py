@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import colorsys
 import glob
 import json
 import os
@@ -23,6 +24,18 @@ from . import theme
 
 EVENT = struct.Struct("llHHI")
 EV_KEY = 1
+NUMBER_ROW_ORDER = "1234567890"
+
+
+def rainbow_row_colors(saturation: float = 1.0, value: float = 1.0) -> dict[str, tuple[int, int, int]]:
+    """One color per number-row key, evenly spaced around the hue wheel in
+    key order (1 -> red, ... 0 -> violet), independent of the active theme."""
+    colors: dict[str, tuple[int, int, int]] = {}
+    for index, key in enumerate(NUMBER_ROW_ORDER):
+        hue = index / len(NUMBER_ROW_ORDER)
+        red, green, blue = colorsys.hsv_to_rgb(hue, saturation, value)
+        colors[key] = (round(red * 255), round(green * 255), round(blue * 255))
+    return colors
 # activeColor/modifierColor/layerColors/modifierKeyColors below are only the
 # fallback used when the theme has no colors.toml to derive from (see
 # theme.derive_colors, fed only the theme's most intense colors — see
@@ -53,6 +66,9 @@ DEFAULT_CONFIG = {
         "CTRL": "#fbbf24",
         "ALT": "#e879f9"
     },
+    # Lights the 1-0 number row (workspace-switch targets) in a fixed rainbow
+    # instead of the layer's solid color, whenever they're an active target.
+    "rainbowNumberRow": True,
     "shiftAloneMode": "invert",
     "applicationShortcuts": True,
     "includeModifierKeys": True,
@@ -205,6 +221,8 @@ class Lighting:
             str(name): rgb(str(color))
             for name, color in dict(config.get("modifierKeyColors", {})).items()
         }
+        self.rainbow_number_row = bool(config.get("rainbowNumberRow", True))
+        self.rainbow_colors = rainbow_row_colors()
 
     def update_theme_colors(self, derived: dict[str, Any], locked_keys: set[str]) -> None:
         """Refresh theme-derived colors after a live theme change, leaving any
@@ -256,13 +274,17 @@ class Lighting:
     def paint(self, targets: set[str], held_names: set[str]) -> None:
         pixels: dict[tuple[int, int], tuple[int, int, int]] = {}
         target_rgb = self.layer_colors.get(layer_name(held_names), self.active_rgb)
-        if held_names == {"SHIFT"} and self.shift_alone_mode == "invert":
+        shift_invert_active = held_names == {"SHIFT"} and self.shift_alone_mode == "invert"
+        if shift_invert_active:
             targets = set(STANDARD_KEYBOARD)
             target_rgb = invert(self.active_rgb)
         for target in targets:
             coordinate = STANDARD_KEYBOARD.get(target)
             if coordinate and coordinate[0] < self.rows and coordinate[1] < self.cols:
-                pixels[coordinate] = target_rgb
+                if self.rainbow_number_row and not shift_invert_active and target in NUMBER_ROW_ORDER:
+                    pixels[coordinate] = self.rainbow_colors[target]
+                else:
+                    pixels[coordinate] = target_rgb
         if self.include_modifiers:
             modifier_keys = {
                 "SUPER": "LEFTMETA", "ALT": "LEFTALT",

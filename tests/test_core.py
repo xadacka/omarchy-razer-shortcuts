@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from shortcut_lights.core import active_targets, parse_binding_lines
-from shortcut_lights.runtime import invert, layer_name
+from shortcut_lights.runtime import NUMBER_ROW_ORDER, invert, layer_name, rainbow_row_colors
 from shortcut_lights.layouts import STANDARD_KEYBOARD
 from shortcut_lights.apps import application_targets
 
@@ -46,6 +46,12 @@ XF86AudioMute                       → Mute
 
     def test_unknown_application_has_no_extra_layer(self):
         self.assertEqual(application_targets("org.gnome.Nautilus", 4), set())
+
+    def test_rainbow_row_covers_every_number_key_with_distinct_colors(self):
+        colors = rainbow_row_colors()
+        self.assertEqual(set(colors), set(NUMBER_ROW_ORDER))
+        self.assertEqual(len(set(colors.values())), len(NUMBER_ROW_ORDER))
+        self.assertEqual(colors["1"], (255, 0, 0))
 
 
 if __name__ == "__main__":

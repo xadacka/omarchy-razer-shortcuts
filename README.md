@@ -52,6 +52,9 @@ combination.
   sparkle base, just a wider slice of it — `modifierIntenseCount` colors
   instead of `sparkleSignatureCount`), deterministically, so it's stable
   across restarts, not hardcoded
+- Lights the number row 1-0 (workspace-switch targets) as a fixed rainbow
+  instead of the solid layer color whenever they're active, so `Super` alone
+  reads at a glance — disable with `rainbowNumberRow: false`
 - Turns bare Shift into a full-keyboard inverse-color layer
 - Shows Chromium-family shortcuts when Chrome, Chromium, Brave, Edge, or
   Vivaldi is focused
@@ -134,6 +137,7 @@ by default so theme-sync stays in control).
 | `modifierColor` | Theme-derived (intense) | Fallback held-modifier color |
 | `layerColors` | Theme-derived (intense) | Target color for each exact modifier set |
 | `modifierKeyColors` | Theme-derived (intense) | Individual modifier colors |
+| `rainbowNumberRow` | `true` | Light the 1-0 row in a fixed rainbow (1=red...0=violet) instead of the layer color, whenever they're an active target |
 | `shiftAloneMode` | `invert` | Bare Shift behavior |
 | `applicationShortcuts` | `true` | Add shortcuts for the focused supported app |
 | `includeModifierKeys` | `true` | Illuminate held modifier keys |

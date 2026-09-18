@@ -11,6 +11,7 @@
   "sparkleStickyMaxSec": 60.0,
   "themeRefreshSec": 5,
   "modifierIntenseCount": 8,
+  "rainbowNumberRow": true,
   "shiftAloneMode": "invert",
   "applicationShortcuts": true,
   "includeModifierKeys": true,
